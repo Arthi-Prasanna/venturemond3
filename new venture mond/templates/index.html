@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venturemond Login</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1e1b4b, #0f172a);
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--glass-border);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.5);
+            color: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <h1>Venturemond</h1>
+            <p style="color: var(--text-muted)">Welcome back. Please sign in.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" class="form-input" placeholder="name@company.com" id="email"
+                onkeypress="handleKeyPress(event)">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" placeholder="••••••••" onkeypress="handleKeyPress(event)">
+        </div>
+
+        <div style="display: grid; gap: 1rem;">
+            <button class="btn btn-primary" style="width: 100%" onclick="handleLogin()">Sign In</button>
+            <div style="text-align: center; font-size: 0.9rem;">
+                <a href="/signup" style="color: var(--primary-color); text-decoration: none;">Create an Account</a>
+            </div>
+            <div
+                style="display: flex; gap: 0.5rem; justify-content: center; font-size: 0.75rem; color: var(--text-muted);">
+                <span style="cursor: pointer; text-decoration: underline;" onclick="fillAdmin()">Demo: Admin</span>
+                <span>•</span>
+                <span style="cursor: pointer; text-decoration: underline;" onclick="fillClient()">Demo: Client</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin(e) {
+            if (e) e.preventDefault(); // Handle both button click and form submit
+            const email = document.getElementById('email').value;
+            const password = document.querySelector('input[type="password"]').value;
+
+            // Create form data for OAuth2
+            const formData = new URLSearchParams();
+            formData.append('username', email); // OAuth2 expects 'username'
+            formData.append('password', password);
+
+            try {
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('access_token', data.access_token);
+
+                    // Decode token to find role (simple decode, verify happens on server)
+                    const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+                    localStorage.setItem('user_role', payload.role);
+
+                    if (payload.role === 'admin') {
+                        console.log("Redirecting to Admin Dashboard");
+                        window.location.href = '/admin';
+                    } else {
+                        console.log("Redirecting to Client Dashboard");
+                        window.location.href = '/client';
+                    }
+                } else {
+                    alert('Invalid credentials');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please check your connection.');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') handleLogin(event);
+        }
+
+        function fillAdmin() {
+            document.getElementById('email').value = 'admin@venturemond.com';
+            // You'll need to register this user first or I can create a seed script
+            document.querySelector('input[type="password"]').value = 'admin123';
+            handleLogin();
+        }
+        function fillClient() {
+            document.getElementById('email').value = 'client@venturemond.com';
+            document.querySelector('input[type="password"]').value = 'client123';
+            handleLogin();
+        }
+    </script>
+</body>
+
+</html>
